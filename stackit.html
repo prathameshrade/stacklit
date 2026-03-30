@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StackIt – Q&A Forum</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --surface2: #1e2026;
+    --border: #2a2d35;
+    --accent: #f0c040;
+    --accent2: #e05c3a;
+    --text: #e8eaf0;
+    --text-muted: #7a7f8e;
+    --text-dim: #4a4f5e;
+    --green: #3dd68c;
+    --blue: #5b8cf7;
+    --tag-bg: #1e2330;
+    --tag-text: #7090d0;
+  }
+
+  body[data-theme="light"] {
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --surface2: #edf2f8;
+    --border: #d5deea;
+    --accent: #f3b62a;
+    --accent2: #d44d2d;
+    --text: #1f2937;
+    --text-muted: #5f6b7c;
+    --text-dim: #94a0b2;
+    --green: #1f9d60;
+    --blue: #3c6fd8;
+    --tag-bg: #e6eefb;
+    --tag-text: #2e5eb7;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 56px;
+    background: rgba(14,15,17,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer;
+  }
+  .nav-logo span { color: var(--text); }
+
+  .nav-center {
+    flex: 1; max-width: 420px; margin: 0 32px;
+    position: relative;
+  }
+  .nav-search {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 14px 7px 36px;
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .nav-search:focus { border-color: var(--accent); }
+  .nav-search::placeholder { color: var(--text-dim); }
+  .search-icon {
+    position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+    color: var(--text-dim);
+  }
+
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+
+  .bell-btn {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-muted);
+    transition: all 0.2s;
+  }
+  .bell-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .notif-badge {
+    position: absolute; top: -5px; right: -5px;
+    background: var(--accent2); color: #fff;
+    font-size: 9px; font-weight: 600;
+    width: 17px; height: 17px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--bg);
+  }
+
+  .btn {
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .btn-ghost:hover { border-color: var(--text-muted); color: var(--text); }
+  .btn-primary {
+    background: var(--accent);
+    color: #0e0f11;
+    font-weight: 600;
+  }
+  .btn-primary:hover { background: #f5cc55; transform: translateY(-1px); }
+
+  .theme-btn {
+    min-width: 98px;
+    text-align: center;
+  }
+
+  /* NOTIFICATION DROPDOWN */
+  .notif-dropdown {
+    position: fixed; top: 62px; right: 32px;
+    width: 340px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    overflow: hidden;
+    display: none;
+    z-index: 200;
+    animation: slideDown 0.18s ease;
+  }
+  .notif-dropdown.open { display: block; }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .notif-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; font-weight: 600;
+  }
+  .notif-clear { font-size: 11px; color: var(--text-muted); cursor: pointer; font-weight: 400; }
+  .notif-clear:hover { color: var(--accent); }
+  .notif-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: flex-start;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .notif-item:hover { background: var(--surface2); }
+  .notif-item.unread { background: rgba(240,192,64,0.04); }
+  .notif-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); flex-shrink: 0; margin-top: 5px;
+  }
+  .notif-item-text { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+  .notif-item-text strong { color: var(--text); }
+  .notif-time { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  /* LAYOUT */
+  .app { display: flex; padding-top: 56px; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px; flex-shrink: 0;
+    position: fixed; top: 56px; bottom: 0; left: 0;
+    padding: 24px 12px;
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .sidebar-section {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--text-dim); text-transform: uppercase;
+    padding: 12px 10px 6px;
+  }
+  .sidebar-link {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 10px; border-radius: 7px;
+    color: var(--text-muted); cursor: pointer;
+    font-size: 13px; font-weight: 400;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+  .sidebar-link:hover { background: var(--surface); color: var(--text); }
+  .sidebar-link.active { background: rgba(240,192,64,0.1); color: var(--accent); font-weight: 500; }
+  .sidebar-link svg { flex-shrink: 0; }
+  .sidebar-tag-list { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar-tag {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 10px; border-radius: 6px;
+    font-size: 12px; color: var(--text-muted); cursor: pointer;
+    transition: background 0.15s;
+  }
+  .sidebar-tag:hover { background: var(--surface); }
+  .sidebar-tag-count {
+    font-size: 11px;
+    background: var(--surface2);
+    color: var(--text-dim);
+    padding: 1px 7px; border-radius: 20px;
+  }
+
+  /* MAIN */
+  .main { margin-left: 220px; flex: 1; padding: 28px 28px 28px 28px; max-width: calc(100% - 220px - 280px); }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    width: 280px; flex-shrink: 0;
+    position: fixed; top: 56px; bottom: 0; right: 0;
+    padding: 24px 16px;
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px; color: var(--text);
+    letter-spacing: -0.5px;
+  }
+  .question-count { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* FILTER BAR */
+  .filter-bar {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 5px 13px;
+    border-radius: 20px;
+    font-size: 12px; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted);
+    transition: all 0.15s;
+    font-family: 'Sora', sans-serif;
+  }
+  .filter-btn:hover { border-color: var(--text-muted); color: var(--text); }
+  .filter-btn.active {
+    background: var(--accent); border-color: var(--accent);
+    color: #0e0f11; font-weight: 600;
+  }
+  .filter-sep { flex: 1; }
+
+  /* QUESTION CARD */
+  .q-list { display: flex; flex-direction: column; gap: 2px; }
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    display: flex; gap: 16px;
+    cursor: pointer;
+    transition: all 0.18s;
+    position: relative;
+    overflow: hidden;
+  }
+  .q-card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: transparent;
+    transition: background 0.18s;
+  }
+  .q-card:hover { border-color: #3a3f50; transform: translateX(2px); }
+  .q-card:hover::before { background: var(--accent); }
+  .q-card.answered::before { background: var(--green); }
+
+  .q-stats {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    min-width: 52px; text-align: center;
+  }
+  .q-stat {
+    display: flex; flex-direction: column; align-items: center;
+    font-family: 'DM Mono', monospace;
+  }
+  .q-stat-num {
+    font-size: 16px; font-weight: 500; color: var(--text);
+    line-height: 1;
+  }
+  .q-stat-label { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+  .q-stat.accepted .q-stat-num { color: var(--green); }
+  .q-stat-div { width: 1px; height: 20px; background: var(--border); }
+
+  .q-body { flex: 1; min-width: 0; }
+  .q-title {
+    font-size: 15px; font-weight: 500;
+    color: var(--text);
+    line-height: 1.4; margin-bottom: 6px;
+    transition: color 0.15s;
+  }
+  .q-card:hover .q-title { color: var(--accent); }
+  .q-excerpt {
+    font-size: 12.5px; color: var(--text-muted);
+    line-height: 1.5; margin-bottom: 10px;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .q-meta {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .tag {
+    background: var(--tag-bg); color: var(--tag-text);
+    font-size: 11px; font-weight: 500;
+    padding: 2px 9px; border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  .tag:hover { background: #252f47; }
+  .q-footer {
+    margin-left: auto;
+    font-size: 11px; color: var(--text-dim);
+    display: flex; align-items: center; gap: 4px;
+    white-space: nowrap;
+  }
+  .q-footer .avatar-sm {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent); display: flex; align-items: center;
+    justify-content: center; font-size: 9px; font-weight: 700; color: #0e0f11;
+  }
+
+  /* VIEWS */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* QUESTION DETAIL */
+  .q-detail-header {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .q-detail-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px; line-height: 1.3;
+    letter-spacing: -0.5px; margin-bottom: 12px;
+  }
+  .q-detail-meta {
+    display: flex; align-items: center; gap: 16px;
+    font-size: 12px; color: var(--text-muted);
+    flex-wrap: wrap;
+  }
+  .q-detail-meta span { display: flex; align-items: center; gap: 4px; }
+
+  .q-content {
+    font-size: 14.5px; line-height: 1.75; color: #c8cbda;
+    margin-bottom: 20px;
+  }
+  .q-content p { margin-bottom: 12px; }
+  .q-content code {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+  }
+  .q-content pre {
+    background: #12141a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 14px 0;
+    overflow-x: auto;
+  }
+  .q-content pre code { background: none; border: none; padding: 0; font-size: 13px; }
+
+  .vote-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px;
+  }
+  .vote-btn {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 7px; padding: 6px 12px;
+    cursor: pointer; color: var(--text-muted);
+    font-size: 13px; font-weight: 500;
+    transition: all 0.15s;
+    font-family: 'Sora', sans-serif;
+  }
+  .vote-btn:hover.up { border-color: var(--green); color: var(--green); }
+  .vote-btn:hover.down { border-color: var(--accent2); color: var(--accent2); }
+  .vote-btn.active-up { border-color: var(--green); color: var(--green); background: rgba(61,214,140,0.08); }
+  .vote-btn.active-down { border-color: var(--accent2); color: var(--accent2); background: rgba(224,92,58,0.08); }
+
+  /* ANSWERS */
+  .answers-section { margin-top: 32px; }
+  .answers-title {
+    font-size: 17px; font-weight: 600; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .answers-count {
+    background: var(--surface2); color: var(--text-muted);
+    border-radius: 20px; padding: 1px 10px; font-size: 12px; font-weight: 500;
+  }
+
+  .answer-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 12px;
+    position: relative;
+    transition: border-color 0.18s;
+  }
+  .answer-card.accepted {
+    border-color: rgba(61,214,140,0.3);
+    background: rgba(61,214,140,0.03);
+  }
+  .accepted-badge {
+    position: absolute; top: 12px; right: 14px;
+    background: rgba(61,214,140,0.15); color: var(--green);
+    font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .answer-meta {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 14px;
+  }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #0e0f11; flex-shrink: 0;
+  }
+  .answer-user { font-size: 13px; font-weight: 500; }
+  .answer-time { font-size: 11px; color: var(--text-dim); }
+
+  /* RICH TEXT EDITOR */
+  .editor-box {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface);
+    transition: border-color 0.2s;
+  }
+  .editor-box:focus-within { border-color: var(--accent); }
+  .editor-toolbar {
+    display: flex; align-items: center; gap: 1px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap; gap: 2px;
+  }
+  .tb-btn {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none; cursor: pointer;
+    border-radius: 5px; color: var(--text-muted);
+    transition: all 0.15s; font-size: 13px;
+    font-family: 'Sora', sans-serif;
+  }
+  .tb-btn:hover { background: var(--surface2); color: var(--text); }
+  .tb-btn.active { background: rgba(240,192,64,0.15); color: var(--accent); }
+  .tb-sep { width: 1px; height: 18px; background: var(--border); margin: 0 4px; }
+  .editor-area {
+    min-height: 120px; padding: 12px 14px;
+    outline: none; color: var(--text);
+    font-family: 'Sora', sans-serif; font-size: 14px; line-height: 1.7;
+  }
+  .editor-area[data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: var(--text-dim); pointer-events: none;
+  }
+
+  /* ASK QUESTION FORM */
+  .ask-form { max-width: 740px; }
+  .form-group { margin-bottom: 20px; }
+  .form-label {
+    display: block; margin-bottom: 7px;
+    font-size: 13px; font-weight: 600; color: var(--text);
+  }
+  .form-hint { font-size: 11.5px; color: var(--text-muted); margin-bottom: 7px; font-weight: 400; }
+  .form-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-input::placeholder { color: var(--text-dim); }
+
+  /* TAGS INPUT */
+  .tags-input-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px;
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    cursor: text; transition: border-color 0.2s; min-height: 42px;
+  }
+  .tags-input-box:focus-within { border-color: var(--accent); }
+  .tag-chip {
+    background: var(--tag-bg); color: var(--tag-text);
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    padding: 2px 8px; border-radius: 4px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .tag-chip-remove {
+    cursor: pointer; color: var(--text-dim); font-size: 14px;
+    line-height: 1; transition: color 0.15s;
+  }
+  .tag-chip-remove:hover { color: var(--accent2); }
+  .tag-text-input {
+    flex: 1; min-width: 80px; background: none; border: none;
+    outline: none; color: var(--text); font-family: 'Sora', sans-serif; font-size: 13px;
+  }
+  .tag-text-input::placeholder { color: var(--text-dim); }
+  .tag-suggestions {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; margin-top: 6px; overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .tag-sugg-item {
+    padding: 8px 14px; cursor: pointer; font-size: 13px;
+    color: var(--text-muted); transition: background 0.1s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tag-sugg-item:hover { background: var(--surface2); color: var(--text); }
+
+  /* RIGHT PANEL WIDGETS */
+  .widget {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; overflow: hidden;
+  }
+  .widget-title {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .hot-q {
+    display: flex; gap: 10px; padding: 8px 0;
+    border-bottom: 1px solid var(--border); cursor: pointer;
+  }
+  .hot-q:last-child { border-bottom: none; }
+  .hot-num {
+    font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500;
+    color: var(--text-dim); flex-shrink: 0; width: 20px; text-align: right; padding-top: 1px;
+  }
+  .hot-title { font-size: 12.5px; color: var(--text-muted); line-height: 1.4; transition: color 0.15s; }
+  .hot-q:hover .hot-title { color: var(--accent); }
+  .tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag-cloud-item {
+    background: var(--tag-bg); color: var(--tag-text);
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    padding: 3px 10px; border-radius: 4px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .tag-cloud-item:hover { background: #252f47; }
+  .top-user {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 0; border-bottom: 1px solid var(--border);
+  }
+  .top-user:last-child { border-bottom: none; }
+  .top-user-info { flex: 1; }
+  .top-user-name { font-size: 13px; font-weight: 500; }
+  .top-user-rep { font-size: 11px; color: var(--text-muted); }
+  .top-user-rank {
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    color: var(--text-dim); font-weight: 500;
+  }
+
+  /* ADMIN PANEL */
+  .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px;
+  }
+  .stat-card-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .stat-card-val {
+    font-family: 'DM Serif Display', serif; font-size: 32px;
+    letter-spacing: -1px;
+  }
+  .stat-card-val.green { color: var(--green); }
+  .stat-card-val.yellow { color: var(--accent); }
+  .stat-card-val.red { color: var(--accent2); }
+  .stat-card-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .admin-table { width: 100%; border-collapse: collapse; }
+  .admin-table th {
+    text-align: left; padding: 10px 14px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-dim); border-bottom: 1px solid var(--border);
+  }
+  .admin-table td {
+    padding: 10px 14px; font-size: 13px; color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .admin-table tr:last-child td { border-bottom: none; }
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 500;
+  }
+  .status-pill.active { background: rgba(61,214,140,0.1); color: var(--green); }
+  .status-pill.banned { background: rgba(224,92,58,0.1); color: var(--accent2); }
+  .status-pill.pending { background: rgba(240,192,64,0.1); color: var(--accent); }
+  .admin-action {
+    padding: 3px 10px; border-radius: 5px; font-size: 11px; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--border); background: transparent;
+    color: var(--text-muted); font-family: 'Sora', sans-serif;
+    transition: all 0.15s; margin-right: 4px;
+  }
+  .admin-action:hover { border-color: var(--accent2); color: var(--accent2); }
+  .section-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+  /* MOBILE warning */
+  .mobile-warn {
+    display: none;
+    background: rgba(240,192,64,0.1); border: 1px solid rgba(240,192,64,0.2);
+    border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--accent);
+    margin-bottom: 16px;
+  }
+  @media (max-width: 1024px) {
+    .right-panel { display: none; }
+    .main { max-width: calc(100% - 220px); }
+  }
+  @media (max-width: 720px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; max-width: 100%; padding: 16px; }
+    .mobile-warn { display: block; }
+  }
+
+  /* BACK BTN */
+  .back-btn {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--text-muted); font-size: 13px; cursor: pointer;
+    margin-bottom: 20px; transition: color 0.15s;
+    background: none; border: none; padding: 0;
+    font-family: 'Sora', sans-serif;
+  }
+  .back-btn:hover { color: var(--accent); }
+
+  /* ANSWER FORM */
+  .answer-form { margin-top: 32px; }
+  .answer-form-title { font-size: 16px; font-weight: 600; margin-bottom: 14px; }
+
+  /* ACCEPT BTN */
+  .accept-btn {
+    display: flex; align-items: center; gap: 5px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-dim); font-size: 11px; font-weight: 500;
+    padding: 4px 10px; border-radius: 6px; cursor: pointer;
+    transition: all 0.15s; font-family: 'Sora', sans-serif;
+    margin-left: auto;
+  }
+  .accept-btn:hover { border-color: var(--green); color: var(--green); }
+  .accept-btn.accepted { border-color: var(--green); color: var(--green); background: rgba(61,214,140,0.08); }
+
+  /* AUTH VIEW */
+  .auth-wrap {
+    max-width: 520px;
+    margin: 28px auto 0;
+  }
+  .auth-card {
+    background: linear-gradient(180deg, var(--surface) 0%, #14161a 100%);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 24px 50px rgba(0,0,0,0.35);
+    overflow: hidden;
+  }
+  .auth-top {
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .auth-tabs {
+    display: flex;
+    gap: 8px;
+  }
+  .auth-tab {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-muted);
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .auth-tab:hover { color: var(--text); }
+  .auth-tab.active {
+    border-color: var(--accent);
+    color: #111;
+    background: var(--accent);
+    font-weight: 600;
+  }
+  .auth-body {
+    padding: 18px;
+  }
+  .auth-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .auth-sub {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+  .auth-form { display: none; }
+  .auth-form.active { display: block; }
+  .auth-row { margin-bottom: 12px; }
+  .auth-row:last-of-type { margin-bottom: 16px; }
+  .auth-msg {
+    font-size: 12px;
+    margin-top: 10px;
+    min-height: 18px;
+  }
+  .auth-msg.error { color: var(--accent2); }
+  .auth-msg.success { color: var(--green); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" onclick="showView('home')">Stack<span>It</span></div>
+  <div class="nav-center">
+    <svg class="search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input class="nav-search" id="searchInput" placeholder="Search questions…" type="text">
+  </div>
+  <div class="nav-right">
+    <button class="btn btn-ghost" id="loginBtn">Login</button>
+    <button class="btn btn-ghost" id="registerBtn">Sign Up</button>
+    <button class="btn btn-ghost" id="logoutBtn" style="display:none">Logout</button>
+    <span id="userBadge" style="display:none;font-size:12px;color:var(--text-muted)"></span>
+    <button class="btn btn-ghost theme-btn" id="themeToggleBtn">Dark Mode</button>
+    <button class="btn btn-ghost" onclick="showView('home')">Browse</button>
+    <button class="btn btn-ghost" id="adminNavBtn" onclick="showView('admin')">Admin</button>
+    <div style="position:relative">
+      <div class="bell-btn" id="bell" onclick="toggleNotif()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div class="notif-badge" id="notifBadge">3</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="askNavBtn" onclick="showView('ask')">Ask Question</button>
+  </div>
+</nav>
+
+<!-- NOTIFICATION DROPDOWN -->
+<div class="notif-dropdown" id="notifDrop">
+  <div class="notif-header">
+    Notifications
+    <span class="notif-clear" id="notifClear">Mark all read</span>
+  </div>
+  <div id="notifList">
+    <div class="notif-item">
+      <div><div class="notif-item-text">No notifications yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">Navigation</div>
+    <div class="sidebar-link active" onclick="showView('home');setSidebarActive(this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </div>
+    <div class="sidebar-link" onclick="showView('home');setSidebarActive(this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Recent
+    </div>
+    <div class="sidebar-link" onclick="showView('home');setSidebarActive(this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Unanswered
+    </div>
+    <div class="sidebar-link" onclick="showView('home');setSidebarActive(this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      Saved
+    </div>
+
+    <div class="sidebar-section">Tags</div>
+    <div class="sidebar-tag-list">
+      <div class="sidebar-tag"><span>react</span><span class="sidebar-tag-count">142</span></div>
+      <div class="sidebar-tag"><span>javascript</span><span class="sidebar-tag-count">98</span></div>
+      <div class="sidebar-tag"><span>jwt</span><span class="sidebar-tag-count">67</span></div>
+      <div class="sidebar-tag"><span>postgresql</span><span class="sidebar-tag-count">54</span></div>
+      <div class="sidebar-tag"><span>node.js</span><span class="sidebar-tag-count">49</span></div>
+      <div class="sidebar-tag"><span>python</span><span class="sidebar-tag-count">43</span></div>
+      <div class="sidebar-tag"><span>typescript</span><span class="sidebar-tag-count">38</span></div>
+      <div class="sidebar-tag"><span>docker</span><span class="sidebar-tag-count">31</span></div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- HOME VIEW -->
+    <div class="view active" id="view-home">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Questions</div>
+          <div class="question-count" id="questionCount">1,847 questions across all topics</div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="setFilter(this)">Newest</button>
+        <button class="filter-btn" onclick="setFilter(this)">Active</button>
+        <button class="filter-btn" onclick="setFilter(this)">Unanswered</button>
+        <button class="filter-btn" onclick="setFilter(this)">Most Voted</button>
+        <span class="filter-sep"></span>
+        <button class="filter-btn" onclick="setFilter(this)">Week</button>
+        <button class="filter-btn" onclick="setFilter(this)">Month</button>
+      </div>
+
+      <div class="q-list" id="questionList">
+        <!-- Question 1 -->
+        <div class="q-card answered" onclick="showView('question')">
+          <div class="q-stats">
+            <div class="q-stat accepted"><div class="q-stat-num">12</div><div class="q-stat-label">votes</div></div>
+            <div class="q-stat-div"></div>
+            <div class="q-stat accepted"><div class="q-stat-num">3</div><div class="q-stat-label">answers</div></div>
+          </div>
+          <div class="q-body">
+            <div class="q-title">Why does useEffect run twice in React 18 strict mode even with an empty dependency array?</div>
+            <div class="q-excerpt">I upgraded my project to React 18 and noticed that my useEffect hook is being called twice during development. The cleanup function runs, then the effect runs again. This doesn't happen in production…</div>
+            <div class="q-meta">
+              <span class="tag">react</span>
+              <span class="tag">hooks</span>
+              <span class="tag">strict-mode</span>
+              <div class="q-footer">
+                <div class="avatar-sm">P</div>
+                priya_k · 2h ago
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="q-card" onclick="showView('question')">
+          <div class="q-stats">
+            <div class="q-stat"><div class="q-stat-num">7</div><div class="q-stat-label">votes</div></div>
+            <div class="q-stat-div"></div>
+            <div class="q-stat"><div class="q-stat-num">0</div><div class="q-stat-label">answers</div></div>
+          </div>
+          <div class="q-body">
+            <div class="q-title">How to properly invalidate JWT tokens on logout without a blacklist database?</div>
+            <div class="q-excerpt">I'm building an authentication system with JWT tokens. When a user logs out, I want to invalidate the token immediately but I don't want to maintain a token blacklist database. What are the recommended approaches?</div>
+            <div class="q-meta">
+              <span class="tag">jwt</span>
+              <span class="tag">authentication</span>
+              <span class="tag">security</span>
+              <div class="q-footer">
+                <div class="avatar-sm" style="background:var(--blue)">T</div>
+                tanvir_r · 5h ago
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="q-card answered" onclick="showView('question')">
+          <div class="q-stats">
+            <div class="q-stat accepted"><div class="q-stat-num">23</div><div class="q-stat-label">votes</div></div>
+            <div class="q-stat-div"></div>
+            <div class="q-stat accepted"><div class="q-stat-num">5</div><div class="q-stat-label">answers</div></div>
+          </div>
+          <div class="q-body">
+            <div class="q-title">PostgreSQL vs MySQL for a high-traffic read-heavy application – which should I choose?</div>
+            <div class="q-excerpt">We're building a platform expecting 10k+ concurrent users with 80% read operations. I've seen conflicting information on which database handles this better. Our main concerns are indexing performance and connection pooling.</div>
+            <div class="q-meta">
+              <span class="tag">postgresql</span>
+              <span class="tag">mysql</span>
+              <span class="tag">performance</span>
+              <div class="q-footer">
+                <div class="avatar-sm" style="background:var(--green)">L</div>
+                lisa_dev · 1d ago
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 4 -->
+        <div class="q-card" onclick="showView('question')">
+          <div class="q-stats">
+            <div class="q-stat"><div class="q-stat-num">4</div><div class="q-stat-label">votes</div></div>
+            <div class="q-stat-div"></div>
+            <div class="q-stat"><div class="q-stat-num">2</div><div class="q-stat-label">answers</div></div>
+          </div>
+          <div class="q-body">
+            <div class="q-title">Docker container exits immediately after starting — CMD vs ENTRYPOINT difference?</div>
+            <div class="q-excerpt">My Docker container starts and exits right away with code 0. I've tried both CMD and ENTRYPOINT but can't figure out the difference. My Dockerfile runs a Node.js server…</div>
+            <div class="q-meta">
+              <span class="tag">docker</span>
+              <span class="tag">node.js</span>
+              <span class="tag">devops</span>
+              <div class="q-footer">
+                <div class="avatar-sm" style="background:var(--accent2)">M</div>
+                dev_max · 2d ago
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 5 -->
+        <div class="q-card answered" onclick="showView('question')">
+          <div class="q-stats">
+            <div class="q-stat accepted"><div class="q-stat-num">18</div><div class="q-stat-label">votes</div></div>
+            <div class="q-stat-div"></div>
+            <div class="q-stat accepted"><div class="q-stat-num">4</div><div class="q-stat-label">answers</div></div>
+          </div>
+          <div class="q-body">
+            <div class="q-title">TypeScript generic constraints: how to ensure a type has a specific property?</div>
+            <div class="q-excerpt">I want to write a generic function that accepts any object that has an `id` property of type string. I've tried `T extends { id: string }` but I'm getting type errors when…</div>
+            <div class="q-meta">
+              <span class="tag">typescript</span>
+              <span class="tag">generics</span>
+              <div class="q-footer">
+                <div class="avatar-sm" style="background:#9b67d8">A</div>
+                anya_ts · 3d ago
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUESTION DETAIL VIEW -->
+    <div class="view" id="view-question">
+      <button class="back-btn" onclick="showView('home')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Questions
+      </button>
+
+      <div class="q-detail-header">
+        <div class="q-detail-title">Why does useEffect run twice in React 18 strict mode even with an empty dependency array?</div>
+        <div class="q-detail-meta">
+          <span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Asked 2 hours ago
+          </span>
+          <span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            847 views
+          </span>
+          <span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            3 answers
+          </span>
+          <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+            <div class="avatar" style="background:var(--accent)">P</div>
+            Asked by <strong style="color:var(--text)">priya_k</strong>
+          </span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+        <span class="tag">react</span>
+        <span class="tag">hooks</span>
+        <span class="tag">react-18</span>
+        <span class="tag">strict-mode</span>
+      </div>
+
+      <div class="q-content">
+        <p>I upgraded my project to React 18 and noticed that my <code>useEffect</code> hook is being called twice during development, even when I pass an empty dependency array <code>[]</code>.</p>
+        <p>Here's a minimal example of what I'm observing:</p>
+        <pre><code>useEffect(() => {
+  console.log('Effect ran');
+  fetchUserData(); // This gets called twice!
+
+  return () => {
+    console.log('Cleanup ran');
+  };
+}, []);</code></pre>
+        <p>The console shows: <code>Effect ran → Cleanup ran → Effect ran</code>. This is causing duplicate API calls and my analytics events are firing twice. Is this a bug? How do I fix it?</p>
+      </div>
+
+      <div class="vote-row">
+        <button class="vote-btn up" id="q-up" onclick="toggleVote('q-up','q-down','active-up')">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+          Upvote · 12
+        </button>
+        <button class="vote-btn down" id="q-down" onclick="toggleVote('q-down','q-up','active-down')">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          Downvote
+        </button>
+        <button class="vote-btn" style="margin-left:auto;" onclick="this.style.color='var(--accent)'">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          Save
+        </button>
+        <button class="vote-btn">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </button>
+      </div>
+
+      <!-- ANSWERS -->
+      <div class="answers-section">
+        <div class="answers-title">
+          Answers
+          <span class="answers-count">3</span>
+        </div>
+
+        <!-- Accepted Answer -->
+        <div class="answer-card accepted">
+          <div class="accepted-badge">
+            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            Accepted Answer
+          </div>
+          <div class="answer-meta">
+            <div class="avatar" style="background:var(--blue)">T</div>
+            <div class="answer-user">tanvir_r</div>
+            <div class="answer-time" style="margin-left:6px">· answered 1 hour ago</div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+              <div style="background:rgba(61,214,140,0.1);color:var(--green);font-size:12px;font-weight:600;padding:2px 10px;border-radius:20px;">▲ 8</div>
+            </div>
+          </div>
+          <div class="q-content" style="margin-bottom:12px;">
+            <p>This is <strong>intentional behavior</strong> in React 18's Strict Mode — not a bug. React deliberately mounts, unmounts, and remounts components in development to help you catch side effects that are not properly cleaned up.</p>
+            <p>The fix is to ensure your effect is <strong>idempotent</strong> or use a ref to track whether the effect has already run:</p>
+            <pre><code>useEffect(() => {
+  let isMounted = true;
+
+  async function fetchData() {
+    if (!isMounted) return;
+    await fetchUserData();
+  }
+
+  fetchData();
+
+  return () => {
+    isMounted = false; // Cleanup: cancel pending operations
+  };
+}, []);</code></pre>
+            <p>For API calls specifically, use <code>AbortController</code> to properly cancel in-flight requests on cleanup.</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="vote-btn up" onclick="toggleVote(this,null,'active-up')">▲ Helpful</button>
+            <button class="vote-btn down" onclick="toggleVote(this,null,'active-down')">▼</button>
+            <button class="accept-btn accepted" onclick="this.classList.toggle('accepted')">
+              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Accepted
+            </button>
+          </div>
+        </div>
+
+        <!-- Answer 2 -->
+        <div class="answer-card">
+          <div class="answer-meta">
+            <div class="avatar" style="background:var(--accent)">P</div>
+            <div class="answer-user">priya_k</div>
+            <div class="answer-time" style="margin-left:6px">· answered 45 min ago</div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+              <div style="background:var(--surface2);color:var(--text-muted);font-size:12px;padding:2px 10px;border-radius:20px;">▲ 3</div>
+            </div>
+          </div>
+          <div class="q-content" style="margin-bottom:12px;">
+            <p>Adding to the above answer — you can also disable StrictMode if you're in a legacy codebase and can't refactor immediately, but this is strongly discouraged for new code:</p>
+            <pre><code>// Instead of:
+&lt;React.StrictMode&gt;
+  &lt;App /&gt;
+&lt;/React.StrictMode&gt;
+
+// Use temporarily:
+&lt;App /&gt;</code></pre>
+            <p>But please treat this as a temporary workaround only. The double invocation is React telling you about real problems.</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="vote-btn up" onclick="toggleVote(this,null,'active-up')">▲ Helpful</button>
+            <button class="vote-btn down" onclick="toggleVote(this,null,'active-down')">▼</button>
+            <button class="accept-btn" onclick="this.classList.toggle('accepted')">
+              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Accept
+            </button>
+          </div>
+        </div>
+
+        <!-- Post Answer Form -->
+        <div class="answer-form">
+          <div class="answer-form-title">Your Answer</div>
+          <div class="editor-box">
+            <div class="editor-toolbar">
+              <button class="tb-btn" title="Bold" onclick="execCmd('bold',this)"><strong>B</strong></button>
+              <button class="tb-btn" title="Italic" onclick="execCmd('italic',this)"><em>I</em></button>
+              <button class="tb-btn" title="Strikethrough" onclick="execCmd('strikeThrough',this)"><s>S</s></button>
+              <div class="tb-sep"></div>
+              <button class="tb-btn" title="Ordered List" onclick="execCmd('insertOrderedList',this)">1.</button>
+              <button class="tb-btn" title="Bullet List" onclick="execCmd('insertUnorderedList',this)">•</button>
+              <div class="tb-sep"></div>
+              <button class="tb-btn" title="Align Left" onclick="execCmd('justifyLeft',this)">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+              </button>
+              <button class="tb-btn" title="Align Center" onclick="execCmd('justifyCenter',this)">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
+              </button>
+              <button class="tb-btn" title="Align Right" onclick="execCmd('justifyRight',this)">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="7" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
+              </button>
+              <div class="tb-sep"></div>
+              <button class="tb-btn" title="Insert Link" onclick="insertLink()">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+              <button class="tb-btn" title="Insert Emoji" onclick="insertEmoji()">😊</button>
+              <button class="tb-btn" title="Upload Image" onclick="document.getElementById('imgUpload').click()">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </button>
+              <input type="file" id="imgUpload" accept="image/*" style="display:none" onchange="handleImageUpload(this)">
+            </div>
+            <div class="editor-area" contenteditable="true" id="answerEditor" data-placeholder="Write your answer here… Use code blocks, explain your reasoning, and provide examples where possible."></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+            <button class="btn btn-primary">Post Answer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ASK QUESTION VIEW -->
+    <div class="view" id="view-ask">
+      <button class="back-btn" onclick="showView('home')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </button>
+      <div class="page-title" style="margin-bottom:6px">Ask a Question</div>
+      <div style="color:var(--text-muted);font-size:13px;margin-bottom:24px;">Be specific. Provide context, code, and what you've already tried.</div>
+
+      <div class="ask-form">
+        <div class="form-group">
+          <label class="form-label">Title <span style="color:var(--accent2)">*</span></label>
+          <div class="form-hint">Summarize your problem in one sentence</div>
+          <input class="form-input" type="text" placeholder="e.g. Why does useEffect run twice in React 18?" id="qTitle">
+          <div id="titlePreview" style="margin-top:6px;font-size:12px;color:var(--text-dim);display:none;">Preview: <span id="titlePreviewText" style="color:var(--text-muted)"></span></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description <span style="color:var(--accent2)">*</span></label>
+          <div class="form-hint">Include all the relevant details, error messages, and what you've tried</div>
+          <div class="editor-box">
+            <div class="editor-toolbar">
+              <button class="tb-btn" title="Bold" onclick="execCmd('bold',this)"><strong>B</strong></button>
+              <button class="tb-btn" title="Italic" onclick="execCmd('italic',this)"><em>I</em></button>
+              <button class="tb-btn" title="Strikethrough" onclick="execCmd('strikeThrough',this)"><s>S</s></button>
+              <div class="tb-sep"></div>
+              <button class="tb-btn" title="Ordered List" onclick="execCmd('insertOrderedList',this)">1.</button>
+              <button class="tb-btn" title="Bullet List" onclick="execCmd('insertUnorderedList',this)">•</button>
+              <div class="tb-sep"></div>
+              <button class="tb-btn" title="Align Left" onclick="execCmd('justifyLeft',this)">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+              </button>
+              <button class="tb-btn" title="Align Center" onclick="execCmd('justifyCenter',this)">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
+              </button>
+              <button class="tb-btn" title="Align Right" onclick="execCmd('justifyRight',this)">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="7" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
+              </button>
+              <div class="tb-sep"></div>
+              <button class="tb-btn" title="Insert Link" onclick="insertLink()">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+              <button class="tb-btn" title="Insert Emoji" onclick="insertEmoji()">😊</button>
+              <button class="tb-btn" title="Upload Image">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </button>
+            </div>
+            <div class="editor-area" contenteditable="true" id="askEditor" data-placeholder="Describe your problem in detail. Include what you've tried, relevant code snippets, and error messages…" style="min-height:180px"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tags <span style="color:var(--accent2)">*</span></label>
+          <div class="form-hint">Add up to 5 relevant tags (press Enter or comma to add)</div>
+          <div class="tags-input-box" id="tagsBox" onclick="document.getElementById('tagInput').focus()">
+            <div class="tag-chip">react <span class="tag-chip-remove" onclick="removeTag(this)">×</span></div>
+            <div class="tag-chip">hooks <span class="tag-chip-remove" onclick="removeTag(this)">×</span></div>
+            <input class="tag-text-input" id="tagInput" placeholder="Add a tag…" oninput="showTagSuggestions(this)" onkeydown="handleTagKey(event)">
+          </div>
+          <div class="tag-suggestions" id="tagSuggestions" style="display:none">
+            <div class="tag-sugg-item" onclick="addTagFromSugg(this)"><span class="tag">javascript</span> 98 questions</div>
+            <div class="tag-sugg-item" onclick="addTagFromSugg(this)"><span class="tag">jwt</span> 67 questions</div>
+            <div class="tag-sugg-item" onclick="addTagFromSugg(this)"><span class="tag">node.js</span> 49 questions</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+          <button class="btn btn-ghost" onclick="showView('home')">Cancel</button>
+          <button class="btn btn-primary" onclick="submitQuestion()">Post Question</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUTH VIEW -->
+    <div class="view" id="view-auth">
+      <div class="auth-wrap">
+        <button class="back-btn" onclick="showView('home')">Back to Questions</button>
+
+        <div class="auth-card">
+          <div class="auth-top">
+            <div class="auth-tabs">
+              <button class="auth-tab active" id="authTabLogin" onclick="switchAuthTab('login')">Login</button>
+              <button class="auth-tab" id="authTabRegister" onclick="switchAuthTab('register')">Sign Up</button>
+            </div>
+          </div>
+
+          <div class="auth-body">
+            <div class="auth-title" id="authTitle">Welcome Back</div>
+            <div class="auth-sub" id="authSub">Login to ask questions, post answers, vote, and manage notifications.</div>
+
+            <form class="auth-form active" id="authLoginForm" onsubmit="submitAuth(event, 'login')">
+              <div class="auth-row">
+                <label class="form-label" for="loginUsername">Username</label>
+                <input class="form-input" id="loginUsername" type="text" autocomplete="username" placeholder="Enter your username" required>
+              </div>
+              <div class="auth-row">
+                <label class="form-label" for="loginPassword">Password</label>
+                <input class="form-input" id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+              </div>
+              <button class="btn btn-primary" type="submit" style="width:100%">Login</button>
+            </form>
+
+            <form class="auth-form" id="authRegisterForm" onsubmit="submitAuth(event, 'register')">
+              <div class="auth-row">
+                <label class="form-label" for="registerUsername">Username</label>
+                <input class="form-input" id="registerUsername" type="text" autocomplete="username" placeholder="Choose a username" required>
+              </div>
+              <div class="auth-row">
+                <label class="form-label" for="registerPassword">Password</label>
+                <input class="form-input" id="registerPassword" type="password" autocomplete="new-password" placeholder="8+ chars with letters and numbers" required>
+              </div>
+              <button class="btn btn-primary" type="submit" style="width:100%">Create Account</button>
+            </form>
+
+            <div class="auth-msg" id="authMsg"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN VIEW -->
+    <div class="view" id="view-admin">
+      <div class="page-title" style="margin-bottom:4px">Admin Panel</div>
+      <div style="color:var(--text-muted);font-size:13px;margin-bottom:24px;">Moderate content, manage users, and monitor platform health</div>
+
+      <div class="admin-grid">
+        <div class="stat-card">
+          <div class="stat-card-label">Total Questions</div>
+          <div class="stat-card-val yellow">1,847</div>
+          <div class="stat-card-sub">↑ 42 this week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Active Users</div>
+          <div class="stat-card-val green">3,241</div>
+          <div class="stat-card-sub">↑ 18% month over month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Pending Reports</div>
+          <div class="stat-card-val red">7</div>
+          <div class="stat-card-sub">Requires review</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Answers Today</div>
+          <div class="stat-card-val" style="color:var(--blue)">124</div>
+          <div class="stat-card-sub">Avg. response: 23 min</div>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-bottom:12px">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        User Management
+      </div>
+      <div class="widget" style="margin-bottom:20px">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Joined</th>
+              <th>Questions</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar" style="width:24px;height:24px;font-size:10px;background:var(--accent)">P</div>priya_k</div></td>
+              <td>Jan 2024</td>
+              <td>34</td>
+              <td><span class="status-pill active">● Active</span></td>
+              <td><button class="admin-action">Warn</button><button class="admin-action" onclick="this.textContent='Unbanned';this.style.borderColor='var(--green)';this.style.color='var(--green)'">Ban</button></td>
+            </tr>
+            <tr>
+              <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar" style="width:24px;height:24px;font-size:10px;background:var(--blue)">T</div>tanvir_r</div></td>
+              <td>Mar 2024</td>
+              <td>18</td>
+              <td><span class="status-pill active">● Active</span></td>
+              <td><button class="admin-action">Warn</button><button class="admin-action">Ban</button></td>
+            </tr>
+            <tr>
+              <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar" style="width:24px;height:24px;font-size:10px;background:var(--accent2)">S</div>spam_user99</div></td>
+              <td>Dec 2024</td>
+              <td>2</td>
+              <td><span class="status-pill banned">● Banned</span></td>
+              <td><button class="admin-action" style="border-color:var(--green);color:var(--green)">Unban</button><button class="admin-action">Delete</button></td>
+            </tr>
+            <tr>
+              <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar" style="width:24px;height:24px;font-size:10px;background:var(--green)">L</div>lisa_dev</div></td>
+              <td>Jun 2023</td>
+              <td>61</td>
+              <td><span class="status-pill active">● Active</span></td>
+              <td><button class="admin-action">Warn</button><button class="admin-action">Ban</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title" style="margin-bottom:12px">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Reported Content
+      </div>
+      <div class="widget" style="margin-bottom:20px">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Content</th>
+              <th>Reported By</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Answer by spam_user99</td>
+              <td>priya_k</td>
+              <td>Spam</td>
+              <td><span class="status-pill pending">⏳ Pending</span></td>
+              <td><button class="admin-action" style="border-color:var(--accent2);color:var(--accent2)">Remove</button><button class="admin-action">Dismiss</button></td>
+            </tr>
+            <tr>
+              <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Question about cracks</td>
+              <td>dev_max</td>
+              <td>Off-topic</td>
+              <td><span class="status-pill pending">⏳ Pending</span></td>
+              <td><button class="admin-action" style="border-color:var(--accent2);color:var(--accent2)">Remove</button><button class="admin-action">Dismiss</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title" style="margin-bottom:12px">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Broadcast Message
+      </div>
+      <div class="widget">
+        <input class="form-input" type="text" placeholder="Write a platform-wide announcement…" style="margin-bottom:10px">
+        <button class="btn btn-primary" style="width:100%">Send to All Users</button>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn btn-ghost" style="flex:1">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px;vertical-align:middle"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download User Report
+        </button>
+        <button class="btn btn-ghost" style="flex:1">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px;vertical-align:middle"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Activity Log
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+    <div class="widget">
+      <div class="widget-title">🔥 Hot This Week</div>
+      <div class="hot-q" onclick="showView('question')">
+        <div class="hot-num">1</div>
+        <div class="hot-title">Why does useEffect run twice in React 18?</div>
+      </div>
+      <div class="hot-q" onclick="showView('question')">
+        <div class="hot-num">2</div>
+        <div class="hot-title">PostgreSQL vs MySQL for high-traffic reads</div>
+      </div>
+      <div class="hot-q" onclick="showView('question')">
+        <div class="hot-num">3</div>
+        <div class="hot-title">TypeScript generic constraints explained</div>
+      </div>
+      <div class="hot-q" onclick="showView('question')">
+        <div class="hot-num">4</div>
+        <div class="hot-title">Invalidating JWT on logout without blacklist</div>
+      </div>
+      <div class="hot-q" onclick="showView('question')">
+        <div class="hot-num">5</div>
+        <div class="hot-title">Docker CMD vs ENTRYPOINT difference</div>
+      </div>
+    </div>
+
+    <div class="widget">
+      <div class="widget-title">Popular Tags</div>
+      <div class="tag-cloud">
+        <span class="tag-cloud-item">react</span>
+        <span class="tag-cloud-item">javascript</span>
+        <span class="tag-cloud-item">typescript</span>
+        <span class="tag-cloud-item">jwt</span>
+        <span class="tag-cloud-item">node.js</span>
+        <span class="tag-cloud-item">postgresql</span>
+        <span class="tag-cloud-item">python</span>
+        <span class="tag-cloud-item">docker</span>
+        <span class="tag-cloud-item">css</span>
+        <span class="tag-cloud-item">api</span>
+        <span class="tag-cloud-item">graphql</span>
+        <span class="tag-cloud-item">redis</span>
+      </div>
+    </div>
+
+    <div class="widget">
+      <div class="widget-title">Top Contributors</div>
+      <div class="top-user">
+        <div class="avatar" style="background:var(--green)">L</div>
+        <div class="top-user-info">
+          <div class="top-user-name">lisa_dev</div>
+          <div class="top-user-rep">4,210 reputation</div>
+        </div>
+        <div class="top-user-rank">#1</div>
+      </div>
+      <div class="top-user">
+        <div class="avatar" style="background:var(--blue)">T</div>
+        <div class="top-user-info">
+          <div class="top-user-name">tanvir_r</div>
+          <div class="top-user-rep">3,784 reputation</div>
+        </div>
+        <div class="top-user-rank">#2</div>
+      </div>
+      <div class="top-user">
+        <div class="avatar" style="background:var(--accent)">P</div>
+        <div class="top-user-info">
+          <div class="top-user-name">priya_k</div>
+          <div class="top-user-rep">2,990 reputation</div>
+        </div>
+        <div class="top-user-rank">#3</div>
+      </div>
+      <div class="top-user">
+        <div class="avatar" style="background:var(--accent2)">M</div>
+        <div class="top-user-info">
+          <div class="top-user-name">dev_max</div>
+          <div class="top-user-rep">1,822 reputation</div>
+        </div>
+        <div class="top-user-rank">#4</div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+  // VIEW SWITCHING
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    window.scrollTo(0, 0);
+    closeNotif();
+  }
+
+  // SIDEBAR ACTIVE
+  function setSidebarActive(el) {
+    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // FILTER BUTTONS
+  function setFilter(el) {
+    el.closest('.filter-bar').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // NOTIFICATIONS
+  function toggleNotif() {
+    const drop = document.getElementById('notifDrop');
+    drop.classList.toggle('open');
+  }
+  function closeNotif() {
+    document.getElementById('notifDrop').classList.remove('open');
+  }
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#bell') && !e.target.closest('#notifDrop')) closeNotif();
+  });
+
+  // VOTING
+  function toggleVote(upId, downId, cls) {
+    const el = typeof upId === 'string' ? document.getElementById(upId) : upId;
+    const other = downId ? (typeof downId === 'string' ? document.getElementById(downId) : downId) : null;
+    const active = cls;
+    const opposite = active === 'active-up' ? 'active-down' : 'active-up';
+    if (el.classList.contains(active)) {
+      el.classList.remove(active);
+    } else {
+      el.classList.add(active);
+      if (other) other.classList.remove(opposite);
+    }
+  }
+
+  // RICH TEXT EDITOR
+  let activeEditor = null;
+  document.querySelectorAll('.editor-area').forEach(area => {
+    area.addEventListener('focus', () => { activeEditor = area; });
+  });
+
+  function execCmd(cmd, btn) {
+    if (activeEditor) activeEditor.focus();
+    document.execCommand(cmd, false, null);
+    if (btn) btn.classList.toggle('active');
+  }
+
+  function insertLink() {
+    const url = prompt('Enter URL:');
+    if (url) {
+      if (activeEditor) activeEditor.focus();
+      document.execCommand('createLink', false, url);
+    }
+  }
+
+  function insertEmoji() {
+    const emojis = ['😊','🚀','👍','💡','🔥','✅','⚠️','🐛','🎯','💻'];
+    const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+    if (activeEditor) {
+      activeEditor.focus();
+      document.execCommand('insertText', false, emoji);
+    }
+  }
+
+  function handleImageUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      if (activeEditor) {
+        activeEditor.focus();
+        document.execCommand('insertImage', false, e.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // TAGS
+  const allTags = ['react', 'javascript', 'typescript', 'jwt', 'node.js', 'postgresql', 'python', 'docker', 'css', 'api', 'hooks', 'graphql', 'redis', 'vue', 'angular', 'express'];
+
+  function showTagSuggestions(input) {
+    const val = input.value.toLowerCase();
+    const sugg = document.getElementById('tagSuggestions');
+    if (!val) { sugg.style.display = 'none'; return; }
+    const matches = allTags.filter(t => t.includes(val)).slice(0, 4);
+    if (matches.length === 0) { sugg.style.display = 'none'; return; }
+    sugg.innerHTML = matches.map(t => `<div class="tag-sugg-item" onclick="addTag('${t}')"><span class="tag">${t}</span></div>`).join('');
+    sugg.style.display = 'block';
+  }
+
+  function addTag(name) {
+    const box = document.getElementById('tagsBox');
+    const input = document.getElementById('tagInput');
+    const existing = Array.from(box.querySelectorAll('.tag-chip')).map(el => el.textContent.trim().slice(0,-1));
+    if (existing.includes(name) || existing.length >= 5) {
+      document.getElementById('tagSuggestions').style.display = 'none';
+      input.value = '';
+      return;
+    }
+    const chip = document.createElement('div');
+    chip.className = 'tag-chip';
+    chip.innerHTML = `${name} <span class="tag-chip-remove" onclick="removeTag(this)">×</span>`;
+    box.insertBefore(chip, input);
+    input.value = '';
+    document.getElementById('tagSuggestions').style.display = 'none';
+  }
+
+  function addTagFromSugg(el) {
+    const name = el.querySelector('.tag').textContent.trim();
+    addTag(name);
+  }
+
+  function removeTag(btn) {
+    btn.closest('.tag-chip').remove();
+  }
+
+  function handleTagKey(e) {
+    const input = e.target;
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = input.value.replace(',', '').trim();
+      if (val) addTag(val);
+    }
+    if (e.key === 'Escape') {
+      document.getElementById('tagSuggestions').style.display = 'none';
+    }
+  }
+
+  // TITLE PREVIEW
+  document.getElementById('qTitle').addEventListener('input', function() {
+    const preview = document.getElementById('titlePreview');
+    const text = document.getElementById('titlePreviewText');
+    if (this.value.length > 3) {
+      preview.style.display = 'block';
+      text.textContent = this.value;
+    } else {
+      preview.style.display = 'none';
+    }
+  });
+
+  // SUBMIT QUESTION
+  function submitQuestion() {
+    const title = document.getElementById('qTitle').value;
+    if (!title.trim()) {
+      document.getElementById('qTitle').style.borderColor = 'var(--accent2)';
+      document.getElementById('qTitle').focus();
+      return;
+    }
+    showView('home');
+  }
+
+  // CLOSE TAG SUGGESTIONS ON OUTSIDE CLICK
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#tagsBox') && !e.target.closest('#tagSuggestions')) {
+      const sugg = document.getElementById('tagSuggestions');
+      if (sugg) sugg.style.display = 'none';
+    }
+  });
+</script>
+<script src="app.js"></script>
+</body>
+</html>
